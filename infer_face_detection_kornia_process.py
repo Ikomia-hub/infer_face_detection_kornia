@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ikomia import core, dataprocess
-from distutils.util import strtobool
+from ikomia.utils import strtobool
 import torch
 import kornia as K
 import copy
