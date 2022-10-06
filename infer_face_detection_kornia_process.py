@@ -69,7 +69,7 @@ class InferFaceDetectionKornia(dataprocess.C2dImageTask):
         else:
             self.setParam(copy.deepcopy(param))
         # Add graphics output
-        self.addOutput(dataprocess.CGraphicsOutput())
+        self.addOutput(dataprocess.CObjectDetectionIO())
         self.face_detection = None
 
     def getProgressSteps(self):
@@ -86,25 +86,23 @@ class InferFaceDetectionKornia(dataprocess.C2dImageTask):
         with torch.no_grad():
             dets = self.face_detection(proc_img)
 
-        graphics_output = self.getOutput(1)
-        graphics_output.setNewLayer("kornia")
-        graphics_output.setImageIndex(0)
-
         # to decode later the detections
         dets = [FaceDetectorResult(o) for o in dets]
 
         param = self.getParam()
 
-        for b in dets:  
-            if b.score < param.conf_thres:  # skip detections with lower score
+        obj_det_output = self.getOutput(1)
+        bbox_color = [250, 0, 0]
+        for i, b in enumerate(dets):
+            if b.score < param.conf_thres: # skip detections with lower score
                 continue
             # draw face bounding box around each detected face
             x1, y1 = b.top_left.int().tolist()
             x2, y2 = b.bottom_right.int().tolist()
             w = float(x2 - x1)
             h = float(y2 - y1)
-            prop_rect = core.GraphicsRectProperty()
-            graphics_box = graphics_output.addRectangle(x1, y1, w, h, prop_rect)
+            obj_det_output.addObject(i+1, "face", b.score.item(),
+                                     float(x1), float(y1), w, h, bbox_color)
 
     def run(self):
         # Core function of your process
