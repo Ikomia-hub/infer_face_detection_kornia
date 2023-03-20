@@ -55,16 +55,16 @@ class InferFaceDetectionKorniaWidget(core.CWorkflowTaskWidget):
         layout_ptr = qtconversion.PyQtToQt(self.gridLayout)
 
         # Set widget layout
-        self.setLayout(layout_ptr)
+        self.set_layout(layout_ptr)
 
-    def onApply(self):
+    def on_apply(self):
         # Get parameters from widget
         self.parameters.conf_thres = self.double_spin_thres.value()
         self.parameters.cuda = self.check_cuda.isChecked()
         self.parameters.update = True
 
         # Send signal to launch the process
-        self.emitApply(self.parameters)
+        self.emit_apply(self.parameters)
 
 
 # --------------------

@@ -38,41 +38,40 @@ class InferFaceDetectionKorniaParam(core.CWorkflowTaskParam):
         self.conf_thres = 0.6
         self.update = False
 
-    def setParamMap(self, param_map):
+    def set_values(self, params):
         # Set parameters values from Ikomia application
-        self.cuda = strtobool(param_map["cuda"])
-        self.conf_thres = float(param_map["conf_thres"])
+        self.cuda = strtobool(params["cuda"])
+        self.conf_thres = float(params["conf_thres"])
         self.update = True
 
-    def getParamMap(self):
+    def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = core.ParamMap()
-        param_map["cuda"] = str(self.cuda)
-        param_map["conf_thres"] = str(self.conf_thres)
-        return param_map
+        params = {"cuda": str(self.cuda),
+                  "conf_thres": str(self.conf_thres)}
+        return params
 
 
 # --------------------
 # - Class which implements the process
 # - Inherits PyCore.CWorkflowTask or derived from Ikomia API
 # --------------------
-class InferFaceDetectionKornia(dataprocess.C2dImageTask):
+class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
     def __init__(self, name, param):
-        dataprocess.C2dImageTask.__init__(self, name)
+        dataprocess.CObjectDetectionTask.__init__(self, name)
         # Detect if we have a GPU available
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # Create parameters class
         if param is None:
-            self.setParam(InferFaceDetectionKorniaParam())
+            self.set_param_object(InferFaceDetectionKorniaParam())
         else:
-            self.setParam(copy.deepcopy(param))
-        # Add graphics output
-        self.addOutput(dataprocess.CObjectDetectionIO())
-        self.face_detection = None
+            self.set_param_object(copy.deepcopy(param))
 
-    def getProgressSteps(self):
+        self.face_detection = None
+        self.name = "face"
+
+    def get_progress_steps(self):
         # Function returning the number of progress steps for this process
         # This is handled by the main progress bar of Ikomia application
         return 1
@@ -89,10 +88,9 @@ class InferFaceDetectionKornia(dataprocess.C2dImageTask):
         # to decode later the detections
         dets = [FaceDetectorResult(o) for o in dets]
 
-        param = self.getParam()
+        param = self.get_param_object()
 
-        obj_det_output = self.getOutput(1)
-        bbox_color = [250, 0, 0]
+        self.set_names([self.name])
         for i, b in enumerate(dets):
             if b.score < param.conf_thres: # skip detections with lower score
                 continue
@@ -101,22 +99,18 @@ class InferFaceDetectionKornia(dataprocess.C2dImageTask):
             x2, y2 = b.bottom_right.int().tolist()
             w = float(x2 - x1)
             h = float(y2 - y1)
-            obj_det_output.addObject(i+1, "face", b.score.item(),
-                                     float(x1), float(y1), w, h, bbox_color)
+            self.add_object(i+1, 0, b.score.item(), float(x1), float(y1), w, h)
 
     def run(self):
         # Core function of your process
-        # Call beginTaskRun for initialization
-        self.beginTaskRun()
+        # Call begin_task_run for initialization
+        self.begin_task_run()
 
         # Get input :
-        input = self.getInput(0)
-
-        # Forward input image
-        self.forwardInputImage(0, 0)
+        input = self.get_input(0)
 
         # Get parameters :
-        param = self.getParam()
+        param = self.get_param_object()
         if param.update or self.face_detection is None:
             self.device = torch.device("cuda") if param.cuda else torch.device("cpu")
             # Create the detector
@@ -124,15 +118,15 @@ class InferFaceDetectionKornia(dataprocess.C2dImageTask):
             param.update = False
             print("Will run on {}".format(self.device.type))
 
-        src_image = input.getImage()
+        src_image = input.get_image()
 
         self.predict(src_image)
 
         # Step progress bar:
-        self.emitStepProgress()
+        self.emit_step_progress()
 
-        # Call endTaskRun to finalize process
-        self.endTaskRun()
+        # Call end_task_run to finalize process
+        self.end_task_run()
 
 
 # --------------------
@@ -145,14 +139,14 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         dataprocess.CTaskFactory.__init__(self)
         # Set process information as string here
         self.info.name = "infer_face_detection_kornia"
-        self.info.shortDescription = "Face detection using the Kornia API"
+        self.info.short_description = "Face detection using the Kornia API"
         self.info.description = "This plugin propose inference for multi-face detection"\
                                 "using Kornia based one the YuNet model." \
                                 "The model implementation is based on Pytorch framework." \
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.0.0"
-        self.info.iconPath = "icons/icon.png"
+        self.info.version = "1.1.0"
+        self.info.icon_path = "icons/icon.png"
         self.info.authors = "E. Riba, D. Mishkin, D. Ponsa, E. Rublee and G. Bradski"
         self.info.article = "Kornia: an Open Source Differentiable"\
                             "Computer Vision Library for PyTorch"
@@ -160,7 +154,7 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.year = 2020
         self.info.license = "Apache-2.0"
         # URL of documentation
-        self.info.documentationLink = "https://kornia.readthedocs.io/en/latest/applications/"\
+        self.info.documentation_link = "https://kornia.readthedocs.io/en/latest/applications/"\
                                     "face_detection.html"
         # Code source repository
         self.info.repository = "https://github.com/kornia/kornia/tree/master/examples/face_detection"
