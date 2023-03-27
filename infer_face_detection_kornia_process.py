@@ -33,7 +33,6 @@ class InferFaceDetectionKorniaParam(core.CWorkflowTaskParam):
     def __init__(self):
         core.CWorkflowTaskParam.__init__(self)
         # Place default value initialization here
-        self.face_detection = None
         self.cuda = torch.cuda.is_available()
         self.conf_thres = 0.6
         self.update = False
@@ -69,7 +68,7 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
             self.set_param_object(copy.deepcopy(param))
 
         self.face_detection = None
-        self.name = "face"
+        self.names = ["face"]
 
     def get_progress_steps(self):
         # Function returning the number of progress steps for this process
@@ -90,7 +89,7 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
         param = self.get_param_object()
 
-        self.set_names([self.name])
+        self.set_names(self.names)
         for i, b in enumerate(dets):
             if b.score < param.conf_thres: # skip detections with lower score
                 continue
