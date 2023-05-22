@@ -105,6 +105,9 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         # Call begin_task_run for initialization
         self.begin_task_run()
 
+        # Temporary fix to clean detection outputs at the beginning of the task
+        self.get_output(1).clear_data()
+
         # Get input :
         input = self.get_input(0)
 
