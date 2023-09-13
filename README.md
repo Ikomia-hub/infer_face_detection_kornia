@@ -19,7 +19,7 @@
     </a> 
 </p>
 
-This plugin propose inference for multi-face detection using Kornia based one the YuNet model.The model implementation is based on Pytorch framework.
+Run inference for multi-face detection using Kornia based one the YuNet model.The model implementation is based on Pytorch framework.
 
 ![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/feat/new_readme/images/people-result.jpg)
 
