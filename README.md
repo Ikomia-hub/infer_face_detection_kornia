@@ -10,7 +10,7 @@
     <a href="https://app.ikomia.ai/hub/">
         <img alt="Website" src="https://img.shields.io/website/http/app.ikomia.ai/en.svg?down_color=red&down_message=offline&up_message=online">
     </a>
-    <a href="https://github.com/Ikomia-hub/infer_face_detection_kornia/blob/main/LICENSE.md">
+    <a href="https://github.com/Ikomia-hub/infer_face_detection_kornia/blob/main/LICENSE">
         <img alt="GitHub" src="https://img.shields.io/github/license/Ikomia-hub/infer_face_detection_kornia.svg?color=blue">
     </a>    
     <br>
@@ -19,10 +19,9 @@
     </a> 
 </p>
 
-This plugin propose inference for multi-face detectionusing Kornia based one the YuNet model.The model implementation is based on Pytorch framework.
+This plugin propose inference for multi-face detection using Kornia based one the YuNet model.The model implementation is based on Pytorch framework.
 
-[Insert illustrative image here. Image must be accessible publicly, in algorithm Github repository for example.
-<img src="images/illustration.png"  alt="Illustrative image" width="30%" height="30%">]
+![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/feat/new_readme/images/people-result.jpg)
 
 ## :rocket: Use with Ikomia API
 
@@ -36,20 +35,20 @@ pip install ikomia
 
 #### 2. Create your workflow
 
-[Change the sample image URL to fit algorithm purpose]
-
 ```python
-import ikomia
 from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
 
 # Init your workflow
 wf = Workflow()
 
-# Add algorithm
-algo = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
+# Add face detection algorithm
+detector = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
 
-# Run on your image  
-wf.run_on(url="example_image.png")
+# Run the workflow on imageontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
+
+# Display result
+display(detector.get_image_with_graphics(), title="Kornia face detector")
 ```
 
 ## :sunny: Use with Ikomia Studio
@@ -62,47 +61,49 @@ Ikomia Studio offers a friendly UI with the same features as the API.
 
 ## :pencil: Set algorithm parameters
 
-[Explain each algorithm parameters]
-
-[Change the sample image URL to fit algorithm purpose]
-
 ```python
-import ikomia
 from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
 
 # Init your workflow
 wf = Workflow()
 
-# Add algorithm
-algo = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
+# Add face detection algorithm
+detector = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
 
-algo.set_parameters({
-    "param1": "value1",
-    "param2": "value2",
-    ...
+detector.set_parameters({
+    "conf_thres": "0.6",
+    "cuda": "True",
 })
 
-# Run on your image  
-wf.run_on(url="example_image.png")
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
 
+# Display result
+display(detector.get_image_with_graphics(), title="Kornia face detector")
 ```
+
+- **conf_thresh** (float, default="0.6"): object detection confidence.
+- **cuda** (bool, default=True): CUDA acceleration if True, run on CPU otherwise.
+
+***Note***: parameter key and value should be in **string format** when added to the dictionary.
 
 ## :mag: Explore algorithm outputs
 
 Every algorithm produces specific outputs, yet they can be explored them the same way using the Ikomia API. For a more in-depth understanding of managing algorithm outputs, please refer to the [documentation](https://ikomia-dev.github.io/python-api-documentation/advanced_guide/IO_management.html).
 
 ```python
-import ikomia
 from ikomia.dataprocess.workflow import Workflow
+from ikomia.utils.displayIO import display
 
 # Init your workflow
 wf = Workflow()
 
-# Add algorithm
-algo = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
+# Add face detection algorithm
+detector = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
 
-# Run on your image  
-wf.run_on(url="example_image.png")
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
 
 # Iterate over outputs
 for output in algo.get_outputs()
@@ -112,6 +113,7 @@ for output in algo.get_outputs()
     output.to_json()
 ```
 
-## :fast_forward: Advanced usage 
+Kornia face detection algorithm generates 2 outputs:
 
-[optional]
+1. Forwaded original image (CImageIO)
+2. Objects detection output (CObjectDetectionIO)
