@@ -106,7 +106,7 @@ detector = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
 wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
 
 # Iterate over outputs
-for output in algo.get_outputs()
+for output in detector.get_outputs():
     # Print information
     print(output)
     # Export it to JSON
