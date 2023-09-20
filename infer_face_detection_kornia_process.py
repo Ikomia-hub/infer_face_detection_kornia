@@ -23,6 +23,7 @@ import kornia as K
 import copy
 from kornia.contrib import FaceDetector, FaceDetectorResult
 import cv2
+import os
 
 # --------------------
 # - Class to handle the process parameters
@@ -70,6 +71,8 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         self.face_detection = None
         self.names = ["face"]
         self.max_size = 1000000
+        self.model_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "weights")
+
 
     def get_progress_steps(self):
         # Function returning the number of progress steps for this process
@@ -137,7 +140,10 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         param = self.get_param_object()
         if param.update or self.face_detection is None:
             self.device = torch.device("cuda") if param.cuda else torch.device("cpu")
-            # Create the detector
+            # Create the detector     
+            if not os.path.exists(self.model_folder):
+                os.makedirs(self.model_folder)       
+            torch.hub.set_dir(self.model_folder)
             self.face_detection = FaceDetector().to(self.device, torch.float32)
             param.update = False
             print("Will run on {}".format(self.device.type))
