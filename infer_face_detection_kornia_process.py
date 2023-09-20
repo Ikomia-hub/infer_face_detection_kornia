@@ -22,7 +22,7 @@ import torch
 import kornia as K
 import copy
 from kornia.contrib import FaceDetector, FaceDetectorResult
-
+import cv2
 
 # --------------------
 # - Class to handle the process parameters
@@ -69,13 +69,33 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
         self.face_detection = None
         self.names = ["face"]
+        self.max_size = 1000000
 
     def get_progress_steps(self):
         # Function returning the number of progress steps for this process
         # This is handled by the main progress bar of Ikomia application
         return 1
 
-    def predict(self, src_image):
+    def resize_image(self, img, width, height):
+        # Check if the image width or height is greater than 1000
+        if width > 1000 or height > 1000:
+            # Calculate the aspect ratio
+            aspect_ratio = width / height
+
+            # If width is greater than height
+            if aspect_ratio > 1:
+                new_width = 1000
+                new_height = int(new_width / aspect_ratio)
+            else:
+                new_height = 1000
+                new_width = int(new_height * aspect_ratio)
+
+            # Resize the image
+            img = cv2.resize(img, (new_width, new_height))
+
+        return img, new_height, new_width
+
+    def predict(self, src_image, h_ratio, w_ratio):
         # Call to the process main routine
         # Preprocess
         proc_img  = K.image_to_tensor(src_image, keepdim=False).to(self.device, torch.float32)
@@ -96,6 +116,8 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
             # draw face bounding box around each detected face
             x1, y1 = b.top_left.int().tolist()
             x2, y2 = b.bottom_right.int().tolist()
+            x1, y1 = x1 * w_ratio, y1 * h_ratio
+            x2, y2 = x2 * w_ratio, y2 * h_ratio
             w = float(x2 - x1)
             h = float(y2 - y1)
             self.add_object(i+1, 0, b.score.item(), float(x1), float(y1), w, h)
@@ -122,7 +144,15 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
         src_image = input.get_image()
 
-        self.predict(src_image)
+        # Face detection losses accuracy on large images, images are resized to training size. 
+        height, width = src_image.shape[:2]
+
+        if height * width > self.max_size:
+            src_image, new_height, new_width = self.resize_image(src_image, width, height)
+            height_ratio, width_ratio = height / new_height, width / new_width
+            self.predict(src_image, height_ratio, width_ratio)
+        else:
+            self.predict(src_image, 1, 1)
 
         # Step progress bar:
         self.emit_step_progress()
@@ -147,7 +177,7 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
                                 "The model implementation is based on Pytorch framework." \
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.1.0"
+        self.info.version = "1.1.1"
         self.info.icon_path = "icons/icon.png"
         self.info.authors = "E. Riba, D. Mishkin, D. Ponsa, E. Rublee and G. Bradski"
         self.info.article = "Kornia: an Open Source Differentiable"\
