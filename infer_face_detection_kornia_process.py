@@ -139,11 +139,11 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         # Get parameters :
         param = self.get_param_object()
         if param.update or self.face_detection is None:
-            self.device = torch.device("cuda") if param.cuda else torch.device("cpu")
+            self.device = torch.device("cuda") if param.cuda and torch.cuda.is_available() else torch.device("cpu")
             # Create the detector     
             if not os.path.exists(self.model_folder):
                 os.makedirs(self.model_folder)
-            torch_dir_ori = torch.hub.get_dir()       
+            torch_dir_ori = torch.hub.get_dir()
             torch.hub.set_dir(self.model_folder)
             self.face_detection = FaceDetector().to(self.device, torch.float32)
             param.update = False
