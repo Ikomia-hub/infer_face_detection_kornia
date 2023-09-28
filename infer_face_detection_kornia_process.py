@@ -180,9 +180,6 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         # Set process information as string here
         self.info.name = "infer_face_detection_kornia"
         self.info.short_description = "Face detection using the Kornia API"
-        self.info.description = "This plugin propose inference for multi-face detection"\
-                                "using Kornia based one the YuNet model." \
-                                "The model implementation is based on Pytorch framework." \
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
         self.info.version = "1.1.1"
@@ -197,7 +194,8 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.documentation_link = "https://kornia.readthedocs.io/en/latest/applications/"\
                                     "face_detection.html"
         # Code source repository
-        self.info.repository = "https://github.com/kornia/kornia/tree/master/examples/face_detection"
+        self.info.repository = "https://github.com/Ikomia-hub/infer_face_detection_kornia"
+        self.info.original_repository = "https://github.com/kornia/kornia/tree/master/examples/face_detection"
         # Keywords used for search
         self.info.keywords = "face detection, kornia, Yunet, cv2, Pytorch "
 
