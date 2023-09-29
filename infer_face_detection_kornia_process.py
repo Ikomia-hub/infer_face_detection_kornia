@@ -197,7 +197,9 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.repository = "https://github.com/Ikomia-hub/infer_face_detection_kornia"
         self.info.original_repository = "https://github.com/kornia/kornia/tree/master/examples/face_detection"
         # Keywords used for search
-        self.info.keywords = "face detection, kornia, Yunet, cv2, Pytorch "
+        self.info.keywords = "face detection, kornia, Yunet, cv2, Pytorch"
+        self.info.algo_type = core.AlgoType.INFER
+        self.info.algo_tasks = "OBJECT_DETECTION"
 
     def create(self, param=None):
         # Create process object
