@@ -21,7 +21,7 @@
 
 Run inference for multi-face detection using Kornia based one the YuNet model.The model implementation is based on Pytorch framework.
 
-![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/feat/new_readme/images/people-result.jpg)
+![Example image](https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people-result.jpg)
 
 ## :rocket: Use with Ikomia API
 
