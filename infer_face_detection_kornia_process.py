@@ -182,7 +182,7 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Face detection using the Kornia API"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.1.1"
+        self.info.version = "1.1.2"
         self.info.icon_path = "icons/icon.png"
         self.info.authors = "E. Riba, D. Mishkin, D. Ponsa, E. Rublee and G. Bradski"
         self.info.article = "Kornia: an Open Source Differentiable"\
