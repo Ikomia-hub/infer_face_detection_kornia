@@ -15,15 +15,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import copy
+import os
+
+import torch
+import cv2
 
 from ikomia import core, dataprocess
 from ikomia.utils import strtobool
-import torch
+
 import kornia as K
-import copy
 from kornia.contrib import FaceDetector, FaceDetectorResult
-import cv2
-import os
 
 # --------------------
 # - Class to handle the process parameters
@@ -47,8 +49,10 @@ class InferFaceDetectionKorniaParam(core.CWorkflowTaskParam):
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        params = {"cuda": str(self.cuda),
-                  "conf_thres": str(self.conf_thres)}
+        params = {
+            "cuda": str(self.cuda),
+            "conf_thres": str(self.conf_thres)
+        }
         return params
 
 
@@ -72,7 +76,6 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         self.names = ["face"]
         self.max_size = 1000000
         self.model_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "weights")
-
 
     def get_progress_steps(self):
         # Function returning the number of progress steps for this process
@@ -98,6 +101,25 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
         return img, new_height, new_width
 
+    def _load_model(self):
+        param = self.get_param_object()
+        self.device = torch.device("cuda") if param.cuda and torch.cuda.is_available() else torch.device("cpu")
+
+        # Create the detector
+        if not os.path.exists(self.model_folder):
+            os.makedirs(self.model_folder)
+
+        torch_dir_ori = torch.hub.get_dir()
+        torch.hub.set_dir(self.model_folder)
+        self.face_detection = FaceDetector().to(self.device, torch.float32)
+        param.update = False
+        print("Will run on {}".format(self.device.type))
+        torch.hub.set_dir(torch_dir_ori)
+
+    def init_long_process(self):
+        self._load_model()
+        super().init_long_process()
+
     def predict(self, src_image, h_ratio, w_ratio):
         # Call to the process main routine
         # Preprocess
@@ -109,21 +131,23 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
 
         # to decode later the detections
         dets = [FaceDetectorResult(o) for o in dets]
-
         param = self.get_param_object()
-
         self.set_names(self.names)
+
         for i, b in enumerate(dets):
-            if b.score < param.conf_thres: # skip detections with lower score
-                continue
-            # draw face bounding box around each detected face
-            x1, y1 = b.top_left.int().tolist()
-            x2, y2 = b.bottom_right.int().tolist()
-            x1, y1 = x1 * w_ratio, y1 * h_ratio
-            x2, y2 = x2 * w_ratio, y2 * h_ratio
-            w = float(x2 - x1)
-            h = float(y2 - y1)
-            self.add_object(i+1, 0, b.score.item(), float(x1), float(y1), w, h)
+            # skip detections with lower score
+            valid_boxes = b.score >= param.conf_thres
+            valid_indexes = valid_boxes.nonzero().flatten().tolist()
+
+            for index in valid_indexes:
+                # draw face bounding box around each detected face
+                x1, y1 = b.top_left[index].int().tolist()
+                x2, y2 = b.bottom_right[index].int().tolist()
+                x1, y1 = x1 * w_ratio, y1 * h_ratio
+                x2, y2 = x2 * w_ratio, y2 * h_ratio
+                w = float(x2 - x1)
+                h = float(y2 - y1)
+                self.add_object(i+1, 0, b.score[index].item(), float(x1), float(y1), w, h)
 
     def run(self):
         # Core function of your process
@@ -134,24 +158,14 @@ class InferFaceDetectionKornia(dataprocess.CObjectDetectionTask):
         self.get_output(1).clear_data()
 
         # Get input :
-        input = self.get_input(0)
+        img_input = self.get_input(0)
 
         # Get parameters :
         param = self.get_param_object()
-        if param.update or self.face_detection is None:
-            self.device = torch.device("cuda") if param.cuda and torch.cuda.is_available() else torch.device("cpu")
-            # Create the detector     
-            if not os.path.exists(self.model_folder):
-                os.makedirs(self.model_folder)
-            torch_dir_ori = torch.hub.get_dir()
-            torch.hub.set_dir(self.model_folder)
-            self.face_detection = FaceDetector().to(self.device, torch.float32)
-            param.update = False
-            print("Will run on {}".format(self.device.type))
-            torch.hub.set_dir(torch_dir_ori)
+        if param.update:
+            self._load_model()
 
-        src_image = input.get_image()
-
+        src_image = img_input.get_image()
         # Face detection losses accuracy on large images, images are resized to training size. 
         height, width = src_image.shape[:2]
 
@@ -182,7 +196,8 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Face detection using the Kornia API"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Detection"
-        self.info.version = "1.1.2"
+        self.info.version = "1.2.0"
+        self.info_min_ikomia_version = "0.15.0"
         self.info.icon_path = "icons/icon.png"
         self.info.authors = "E. Riba, D. Mishkin, D. Ponsa, E. Rublee and G. Bradski"
         self.info.article = "Kornia: an Open Source Differentiable"\
@@ -200,6 +215,10 @@ class InferFaceDetectionKorniaFactory(dataprocess.CTaskFactory):
         self.info.keywords = "face detection, kornia, Yunet, cv2, Pytorch"
         self.info.algo_type = core.AlgoType.INFER
         self.info.algo_tasks = "OBJECT_DETECTION"
+        self.info.hardware_config.min_cpu = 4
+        self.info.hardware_config.min_ram = 16
+        self.info.hardware_config.gpu_required = False
+        self.info.hardware_config.min_vram = 6
 
     def create(self, param=None):
         # Create process object
