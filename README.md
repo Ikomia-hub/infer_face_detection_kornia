@@ -45,7 +45,8 @@ wf = Workflow()
 # Add face detection algorithm
 detector = wf.add_task(name="infer_face_detection_kornia", auto_connect=True)
 
-# Run the workflow on imageontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
+# Run the workflow on image
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_face_detection_kornia/main/images/people.jpg")
 
 # Display result
 display(detector.get_image_with_graphics(), title="Kornia face detector")
